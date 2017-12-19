@@ -1,239 +1,261 @@
 <?php 
-use \Firebase\JWT\JWT;
 
-class Controller_Users extends Controller_Base 
-{   
-    public function post_create()
-    {
-        try {
-            if ( ! isset($_POST['name'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro se llame name',
-                    'data' => null
-                ));
+use Firebase\JWT\JWT;
 
-                return $json;
-            }
-
-            if ( ! isset($_POST['pass'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro se llame pass',
-                    'data' => null
-                ));
-
-                return $json;
-            }
-
-            if ( ! isset($_POST['email'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro email',
-                    'data' => null
-                ));
-
-                return $json;
-            }
-
-            $checkUsername = Model_Users::find('all', ['where' => ['name' => $_POST['name']]]);
-			
-            $checkEmail = Model_Users::find('all', ['where' => ['email' => $_POST['email']]]);
-
-			$boolTested;
-
-	        if ($checkUsername == null && $checkEmail == null){
-	        	$boolTested = false;
-	        }else{
-	        	$boolTested = true;
-	        }
-
-            if ($boolTested == false){
-	            $input = $_POST;
-	            $user = new Model_Users();
-	            $user->name = $input['name'];
-	            $user->pass = $input['pass'];
-	            $user->email = $input['email'];
-	            $user->save();
-
-	            $json = $this->response(array(
-	                'code' => 201,
-	                'message' => 'usuario creado',
-	                'data' => $user
-	            ));
-
-	            return $json;
-            }else{
-            	$json = $this->response(array(
-	                'code' => 204,
-	                'message' => 'el usuario ya existe',
-                    'data' => null
-	            ));
-	            return $json;
-            }
-
-        } 
-        catch (Exception $e) 
-        {
-            $json = $this->response(array(
-                'code' => 500,
-                'message' => 'error interno del servidor',
-                'data' => null
-            ));
-
-            return $json;
-        }        
-    }
-
-    public function post_modify()
-    {
-            if ( ! isset($_POST['pass'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro se llame pass',
-                    'data' => null
-                ));
-
-                return $json;
-            }
-
-            $input = $_POST;
-            $idUser = self::checkToken();
-            $user = Model_Users::find($idUser);
-            $user->pass = $_POST['pass'];
-            $user->save();
-
-            $json = $this->response(array(
-                'code' => 200,
-                'message' => 'contraseña modificada',
-                'data' => $user
-            ));
-
-            return $json;      
-    }
+class Controller_Users extends Controller_Rest
+{
+    private $key = '53jDgdTf5efGH54efef978';
 
     public function get_login()
     {
         try {
-            if ( ! isset($_GET['name'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro se name',
-                    'data' => null
-                ));
 
-                return $json;
-            }
-
-            if ( ! isset($_GET['pass'])) 
-            {
-                $json = $this->response(array(
-                    'code' => 400,
-                    'message' => 'parametro incorrecto, se necesita que el parametro se llame pass',
-                    'data' => null
-                ));
-
-                return $json;
-            }
-
-            $users = Model_Users::find('all', ['where' => ['name' => $_GET['name'], 'pass' => $_GET['pass']]]);
-
-            foreach ($users as $key => $value) {
-                $id = $value->id;
-            }
-
-            if ($users == null){
-                $json = $this->response(array(
-                    'code' => 401,
-                    'message' => 'usuario o contraseña incorrecto',
-                    'data' => null
-                ));
-                return $json;
-            }else{
-                $key = "TextKey";
+            $users = Model_users::find('first', array(
+                'where' => array(
+                    array('username', $_GET['username']),
+                    array('pass', $_GET['pass'])
+                ),
+            ));
+            
+            //Validación usuario
+            if (!empty($users)) {
+               //Generar token
                 $token = array(
-                    "name" => $_GET['name'],
-                    "pass" => $_GET['pass'],
-                    "id" => $id,
-                    "logged" => true
+                    'id'  => $users['id'],
+                    'username' => $_GET['username'],
+                    'pass' => $_GET['pass']
                 );
-                
-                $jwt = JWT::encode($token, $key);
+            
+            $jwt = JWT::encode($token, $this->key);
 
-                $json = $this->response(array(
-                    'code' => 201,
-                    'message' => 'Logeado',
-                    'token' => $jwt             
+            $json = $this->response(array(
+                    'code' => 200,
+                    'message' => 'usuario logeado',
+                    'data' => array(
+                        'token' => $jwt,
+                        'username' => $token['username']   
+                    )
                 ));
-                return $json;  
+            return $json;
             }
+            else
+            {
+                $json = $this->response(array(
+                    'code' => 400,
+                    'message' => 'El usuario no existe o contraseña incorrecta',
+                ));
+               return $json;
+            }
+        }
+        catch (Exception $e) 
+        {
+            $json = $this->response(array(
+                'code' => 500,
+                'message' => $e->getMessage(),
+            ));
+
+            return $json;
+        }
+    }
+    
+    public function post_create()
+    {
+        try {
+            //Validar campos rellenos y nombre correcto
+            if ( ! isset($_POST['username']) or
+                 ! isset($_POST['email']) or
+                 ! isset($_POST['pass']) or
+                 $_POST['username'] == "" or
+                 $_POST['email'] == "" or
+                 $_POST['pass'] == "") 
+            {
+                $json = $this->response(array(
+                    'code' => 400,
+                    'message' => 'parametros incorrectos/Los campos no pueden estar vacios'
+                ));
+
+                return $json;
+            }
+
+            //Validar usuario no existe
+            $userName = Model_users::find('all', array(
+                'where' => array(
+                    array('username', $_POST['username']),
+                ),
+            ));
+
+            if (! empty($userName)) {
+               $json = $this->response(array(
+                    'code' => 400,
+                    'message' => 'Ya existe un usuario con este username',
+                ));
+               return $json;
+            }
+
+            //Validar email no existe
+            $userEmail = Model_users::find('all', array(
+                'where' => array(
+                    array('email', $_POST['email']),
+                ),
+            ));
+
+            if (! empty($userEmail)) {
+               $json = $this->response(array(
+                    'code' => 400,
+                    'message' => 'Ya existe un usuario con este email',
+                ));
+               return $json;
+            }
+
+            $input = $_POST;
+            $user = new Model_Users();
+            $user->username = $input['username'];
+            $user->email = $input['email'];
+            $user->pass = $input['pass'];
+            $user->save();
+            $json = $this->response(array(
+                'code' => 200,
+                'message' => 'usuario creado',
+                'data' => $input['username']
+            ));
+
+            return $json;
 
         } 
         catch (Exception $e) 
         {
             $json = $this->response(array(
                 'code' => 500,
-                'message' => 'error interno del servidor',
+                'message' => $e->getMessage(),
             ));
 
             return $json;
-        }                       
+        }
+
+        
     }
 
     public function get_users()
     {
-        $users = Model_Users::find('all', ['select' => 'name']);
+    	$users = Model_Users::find('all');
 
-        foreach ($users as $key => $value) {
-                $show[] = $value->name;
-                $showID[] = $value->id;
-        }
-        $test = self::checkToken();
-        $json = $this->response(array(
-            'name' => $show,
-            'id' => $showID,
-            'bolean' => $test
-        ));
-
-        return $json;  
+    	return $this->response(Arr::reindex($users));
     }
 
-    public function get_singleuser()
+    private function authorization($token)
     {
-        $users = Model_Users::find('all', ['where' => ['id' => $_GET['id']]]);
 
-        foreach ($users as $key => $value) {
-                $show[] = $value->name;
-                $showP[] = $value->pass;
-        }
+        $decoded = JWT::decode($token, $this->key, array('HS256'));
 
-        $json = $this->response(array(
-            'name' => $show,
-            'pass' => $showP,
-            'data' => null
+        $userId = $decoded->id;
+
+        $users = Model_users::find('all', array(
+                'where' => array(
+                    array('id', $userId)
+                ),
         ));
 
-        return $json;  
+        if ($users != null) {
+            return true;
+        }
+        else 
+        {
+           return false; 
+        }
     }
+
 
     public function post_delete()
     {
-    	$idABorrar = self::checkToken();
-        $user = Model_Users::find($idABorrar);
-        $userName = $user->name;
-        $user->delete();
+        try
+        {
+            $token = apache_request_headers()['Authorization'];
 
-        $json = $this->response(array(
-            'code' => 200,
-            'message' => 'usuario borrado',
-            'data' => $userName
-        ));
+            if ($this->authorization($token) == true){
+               
+                $decoded = JWT::decode($token, $this->key, array('HS256'));
+                $id = $decoded->id;
+                $user = Model_Users::find($id);
 
-        return $json;
+                $user->delete();
+                $json = $this->response(array(
+                    'code' => 200,
+                    'message' => 'usuario borrado'
+                ));
+                return $json;
+            
+            }
+            else
+            {
+                $json = $this->response(array(
+                    'code' => 400,
+                    'message' => 'Token incorrecto, no tienes permiso'
+                ));
+
+                return $json;
+            }
+        } 
+        catch (Exception $e) 
+        {
+            $json = $this->response(array(
+                'code' => 501,
+                'message' => $e->getMessage(),
+            ));
+
+            return $json;
+        }
+    }
+
+    public function post_edit()
+    {
+        try
+        {
+            $token = apache_request_headers()['Authorization'];
+
+            if ($this->authorization($token) == true){
+               
+                $decoded = JWT::decode($token, $this->key, array('HS256'));
+                $id = $decoded->id;
+                $user = Model_Users::find($id);
+
+                if ( ! isset($_POST['pass']) or $_POST['pass'] == "") 
+                {
+                   $json = $this->response(array(
+                        'code' => 401,
+                        'message' => 'parametros incorrectos/Los campos no pueden estar vacios'
+                    ));
+
+                    return $json; 
+                }
+                else
+                {
+                    $user->pass = $_POST['pass'];
+                    $user->save();
+                    $json = $this->response(array(
+                        'code' => 200,
+                        'message' => 'Contraseña cambiada'
+                    ));
+                    return $json;
+                }
+            }
+            else
+            {
+                $json = $this->response(array(
+                    'code' => 402,
+                    'message' => 'Token incorrecto, no tienes permiso'
+                ));
+
+                return $json;
+            }
+        } 
+        catch (Exception $e) 
+        {
+            $json = $this->response(array(
+                'code' => 501,
+                'message' => $e->getMessage(),
+            ));
+
+            return $json;
+        }
     }
 }

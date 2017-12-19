@@ -77,8 +77,8 @@ return array(
 	/**
 	 * Localization & internationalization settings
 	 */
-	'language'           => 'es', // Default language
-	'language_fallback'  => 'es', // Fallback language when file isn't available for default language
+	// 'language'           => 'en', // Default language
+	// 'language_fallback'  => 'en', // Fallback language when file isn't available for default language
 	// 'locale'             => 'en_US', // PHP set_locale() setting, null to not set
 
 	/**
@@ -93,7 +93,7 @@ return array(
 	 * default_timezone		optional, if you want to change the server's default timezone
 	 */
 	// 'server_gmt_offset'  => 0,
-	'default_timezone'   => 'UTC',
+	 'default_timezone'   => "UTC",
 
 	/**
 	 * Logging Threshold.  Can be set to any of the following:
@@ -147,7 +147,7 @@ return array(
 		 * WARNING: Using xss_clean will cause a performance hit.
 		 * How much is dependant on how much input data there is.
 		 */
-		'input_filter'  => array(),
+		// 'input_filter'  => array(),
 
 		/**
 		 * This output filter can be any normal PHP function as well as 'xss_clean'
@@ -170,7 +170,7 @@ return array(
 		/**
 		 * Whether to automatically filter view data
 		 */
-		'auto_filter_output'  => true,
+		// 'auto_filter_output'  => true,
 
 		/**
 		 * With output encoding switched on all objects passed will be converted to strings or
@@ -259,7 +259,7 @@ return array(
 	/**************************************************************************/
 	/* Always Load                                                            */
 	/**************************************************************************/
-	'always_load'  => array(
+	 'always_load'  => array(
 
 		/**
 		 * These packages are loaded on Fuel's startup.
@@ -272,10 +272,9 @@ return array(
 		 *     array('auth'	=> PKGPATH.'auth/')
 		 * );
 		 */
-
-		'packages'  => array(
-   		'orm',
-   		), 
+		 'packages'  => array(
+		 'orm',
+		 ),
 
 		/**
 		 * These modules are always loaded on Fuel's startup. You can specify them
@@ -311,6 +310,6 @@ return array(
 		 * If you don't want the lang in a group use null as groupname.
 		 */
 		// 'language'  => array(),
-	),
+	 ),
 
 );
