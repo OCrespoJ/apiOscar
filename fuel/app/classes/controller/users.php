@@ -29,7 +29,7 @@ class Controller_Users extends Controller_Rest
             $jwt = JWT::encode($token, $this->key);
 
             $json = $this->response(array(
-                    'code' => 200,
+                    'code' => 201,
                     'message' => 'usuario logeado',
                     'data' => array(
                         'token' => $jwt,
@@ -41,7 +41,7 @@ class Controller_Users extends Controller_Rest
             else
             {
                 $json = $this->response(array(
-                    'code' => 400,
+                    'code' => 401,
                     'message' => 'El usuario no existe o contraseña incorrecta',
                 ));
                return $json;
@@ -50,7 +50,7 @@ class Controller_Users extends Controller_Rest
         catch (Exception $e) 
         {
             $json = $this->response(array(
-                'code' => 500,
+                'code' => 501,
                 'message' => $e->getMessage(),
             ));
 
@@ -70,7 +70,7 @@ class Controller_Users extends Controller_Rest
                  $_POST['pass'] == "") 
             {
                 $json = $this->response(array(
-                    'code' => 400,
+                    'code' => 402,
                     'message' => 'parametros incorrectos/Los campos no pueden estar vacios'
                 ));
 
@@ -86,7 +86,7 @@ class Controller_Users extends Controller_Rest
 
             if (! empty($userName)) {
                $json = $this->response(array(
-                    'code' => 400,
+                    'code' => 403,
                     'message' => 'Ya existe un usuario con este username',
                 ));
                return $json;
@@ -101,7 +101,7 @@ class Controller_Users extends Controller_Rest
 
             if (! empty($userEmail)) {
                $json = $this->response(array(
-                    'code' => 400,
+                    'code' => 404,
                     'message' => 'Ya existe un usuario con este email',
                 ));
                return $json;
@@ -114,7 +114,7 @@ class Controller_Users extends Controller_Rest
             $user->pass = $input['pass'];
             $user->save();
             $json = $this->response(array(
-                'code' => 200,
+                'code' => 202,
                 'message' => 'usuario creado',
                 'data' => $input['username']
             ));
@@ -125,7 +125,7 @@ class Controller_Users extends Controller_Rest
         catch (Exception $e) 
         {
             $json = $this->response(array(
-                'code' => 500,
+                'code' => 502,
                 'message' => $e->getMessage(),
             ));
 
@@ -179,7 +179,7 @@ class Controller_Users extends Controller_Rest
 
                 $user->delete();
                 $json = $this->response(array(
-                    'code' => 200,
+                    'code' => 201,
                     'message' => 'usuario borrado'
                 ));
                 return $json;
@@ -188,7 +188,7 @@ class Controller_Users extends Controller_Rest
             else
             {
                 $json = $this->response(array(
-                    'code' => 400,
+                    'code' => 401,
                     'message' => 'Token incorrecto, no tienes permiso'
                 ));
 
@@ -232,7 +232,7 @@ class Controller_Users extends Controller_Rest
                     $user->pass = $_POST['pass'];
                     $user->save();
                     $json = $this->response(array(
-                        'code' => 200,
+                        'code' => 201,
                         'message' => 'Contraseña cambiada'
                     ));
                     return $json;
